@@ -13,10 +13,18 @@ export interface Persona {
   id: UserRole;
   dropdownLabel: string;
   shortName: string;
+  fullName: string;
+  postingIdentityLabel: string;
   roleTitle: string;
   metaText: string;
   permissionSummary: string;
   accentClass: string;
+}
+
+export interface DoubtAttachment {
+  type: 'code' | 'pdf' | 'image' | 'video';
+  label: string;
+  content: string;
 }
 
 export interface AnswerRatings {
@@ -30,8 +38,11 @@ export interface Answer {
   authorName: string;
   authorRole: string;
   authorBadge: string;
+  createdAt?: string;
   content: string;
   codeBlock?: string;
+  attachmentLabel?: string;
+  facultyNote?: string;
   isPeerAccepted: boolean;
   isTeacherVerified: boolean;
   isHiddenByModerator: boolean;
@@ -50,5 +61,6 @@ export interface Doubt {
   waitingHours: number;
   status: DoubtStatus;
   attachments: string[];
+  attachment?: DoubtAttachment | null;
   answers: Answer[];
 }

@@ -5,6 +5,8 @@ export const PERSONAS: Persona[] = [
     id: 'asker',
     dropdownLabel: 'Student (Asker — Aarav)',
     shortName: 'Aarav',
+    fullName: 'Aarav Sharma',
+    postingIdentityLabel: 'Aarav Sharma (1st Year Student)',
     roleTitle: 'Student · Asker',
     metaText: 'First Year CSE',
     permissionSummary: 'Can post doubts, rate answers, and mark answers as Peer-Accepted.',
@@ -14,6 +16,8 @@ export const PERSONAS: Persona[] = [
     id: 'peer',
     dropdownLabel: 'Student (Peer Solver — Priya)',
     shortName: 'Priya',
+    fullName: 'Priya Deshmukh',
+    postingIdentityLabel: 'Priya Deshmukh (Peer Solver · Rank #2)',
     roleTitle: 'Peer Solver',
     metaText: 'Top Solver Rank #2',
     permissionSummary: 'Can answer open doubts, attach code snippets, and earn solver ratings.',
@@ -23,6 +27,8 @@ export const PERSONAS: Persona[] = [
     id: 'teacher',
     dropdownLabel: 'Teacher / Moderator — Prof. Sharma',
     shortName: 'Prof. Sharma',
+    fullName: 'Prof. R. K. Kulkarni',
+    postingIdentityLabel: 'Prof. R. K. Kulkarni (Faculty Moderator)',
     roleTitle: 'Teacher / Moderator',
     metaText: 'Computer Engineering',
     permissionSummary: 'Can grant Teacher-Verified shields and hide misleading answers.',
@@ -46,9 +52,10 @@ export const INITIAL_DOUBTS: Doubt[] = [
     answers: [
       {
         id: 'ans-101',
-        authorName: 'Priya',
-        authorRole: 'Peer Solver',
+        authorName: 'Priya Deshmukh',
+        authorRole: '2nd Year • Top Solver',
         authorBadge: 'Ninja Solver',
+        createdAt: '22 hrs ago',
         content:
           "When you enter a number and press Enter, scanf('%d', &choice) reads only the digits and leaves the trailing newline character ('\\n') sitting in the stdin input buffer. On the very next line, scanf('%c', &ch) immediately consumes that leftover '\\n' instead of waiting for fresh keyboard input. Adding a single leading space before %c tells scanf to skip any whitespace characters (including newlines) before reading your character.",
         codeBlock: `int choice;
@@ -56,6 +63,7 @@ char ch;
 
 scanf("%d", &choice);
 scanf(" %c", &ch); // Notice the leading space before %c to consume leftover '\\n'`,
+        facultyNote: 'Verified: Accurate explanation of stdin newline buffering and portable fix.',
         isPeerAccepted: true,
         isTeacherVerified: true,
         isHiddenByModerator: false,
@@ -83,13 +91,15 @@ scanf(" %c", &ch); // Notice the leading space before %c to consume leftover '\\
     answers: [
       {
         id: 'ans-201',
-        authorName: 'Priya',
-        authorRole: 'Peer Solver',
+        authorName: 'Priya Deshmukh',
+        authorRole: '2nd Year • Top Solver',
         authorBadge: 'Ninja Solver',
+        createdAt: '1 hr ago',
         content:
           'malloc(size_in_bytes) allocates a single contiguous block of heap memory without clearing it, so it contains whatever garbage bytes were previously at those addresses. calloc(num_elements, size_of_each) takes two arguments and explicitly zero-initializes every allocated bit to 0. If you plan to overwrite every index immediately (like reading from a file), malloc is slightly faster because it skips the zeroing pass.',
         codeBlock: `int *a = (int *)malloc(5 * sizeof(int));   // Uninitialized (contains garbage values)
 int *b = (int *)calloc(5, sizeof(int));    // Zero-initialized (all 5 elements are 0)`,
+        attachmentLabel: 'heap_comparison_diagram.png',
         isPeerAccepted: true,
         isTeacherVerified: false,
         isHiddenByModerator: false,
@@ -103,8 +113,9 @@ int *b = (int *)calloc(5, sizeof(int));    // Zero-initialized (all 5 elements a
       {
         id: 'ans-202',
         authorName: 'Vikram_99',
-        authorRole: 'Student',
+        authorRole: '1st Year • Classmate',
         authorBadge: 'Classmate',
+        createdAt: '45 mins ago',
         content:
           'Both do the exact same thing, calloc is just an outdated syntax from Turbo C.',
         isPeerAccepted: false,

@@ -1,6 +1,15 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { CheckCircle2, X } from 'lucide-react';
 import { INITIAL_DOUBTS, PERSONAS } from './data/seedData';
-import { Answer, AnswerRatings, Doubt, DoubtStatus, NavTab, UserRole } from './types';
+import {
+  Answer,
+  AnswerRatings,
+  Doubt,
+  DoubtAttachment,
+  DoubtStatus,
+  NavTab,
+  UserRole,
+} from './types';
 import { TopNav } from './components/TopNav';
 import { DoubtFeedView } from './components/DoubtFeedView';
 import { DoubtDetailView } from './components/DoubtDetailView';
@@ -23,6 +32,13 @@ export default function App() {
   const [selectedDoubtId, setSelectedDoubtId] = useState<string | null>(null);
   const [activeRole, setActiveRole] = useState<UserRole>('asker');
   const [searchQuery, setSearchQuery] = useState('');
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!toastMessage) return;
+    const timer = window.setTimeout(() => setToastMessage(null), 5000);
+    return () => window.clearTimeout(timer);
+  }, [toastMessage]);
 
   const activePersona = useMemo(
     () => PERSONAS.find((p) => p.id === activeRole) ?? PERSONAS[0],
@@ -63,42 +79,70 @@ export default function App() {
     subject: string;
     topic: string;
     description: string;
-    attachments: string[];
+    attachment: DoubtAttachment | null;
   }) => {
+    const authorNameByRole: Record<UserRole, string> = {
+      asker: 'Aarav Sharma',
+      peer: 'Priya Deshmukh',
+      teacher: 'Prof. R. K. Kulkarni',
+    };
+
     const newDoubt: Doubt = {
-      id: `doubt-${Date.now()}`,
+      id: Date.now().toString(),
       title: payload.title,
       description: payload.description,
       subject: payload.subject,
       topic: payload.topic,
-      authorName: activePersona.shortName,
+      authorName: authorNameByRole[activeRole],
       createdAt: 'Just now',
-      waitingHours: 0.05,
+      waitingHours: 0,
       status: 'unresolved',
-      attachments: payload.attachments,
+      attachments: payload.attachment ? [payload.attachment.label] : [],
+      attachment: payload.attachment,
       answers: [],
     };
     setDoubts((prev) => [newDoubt, ...prev]);
+    setSelectedDoubtId(null);
     setActiveTab('feed');
-    setSelectedDoubtId(newDoubt.id);
+    setToastMessage('Doubt posted! Visible in Doubt Feed & Unresolved Tracker.');
   };
 
-  const handleAddAnswer = (doubtId: string, content: string, codeBlock?: string) => {
+  const handleAddAnswer = (
+    doubtId: string,
+    payload: {
+      content: string;
+      codeBlock?: string;
+      attachmentLabel?: string;
+      verifyImmediately?: boolean;
+    }
+  ) => {
+    const roleLabelByRole: Record<UserRole, string> = {
+      asker: '1st Year • Student',
+      peer: '2nd Year • Top Solver',
+      teacher: 'Faculty • Computer Engineering',
+    };
     const badgeByRole: Record<UserRole, string> = {
-      asker: 'Student',
+      asker: 'Classmate',
       peer: 'Ninja Solver',
       teacher: 'Faculty',
     };
 
+    const isVerified = activeRole === 'teacher' && Boolean(payload.verifyImmediately);
+
     const newAnswer: Answer = {
       id: `ans-${Date.now()}`,
-      authorName: activePersona.shortName,
-      authorRole: activePersona.roleTitle,
+      authorName: activePersona.fullName,
+      authorRole: roleLabelByRole[activeRole],
       authorBadge: badgeByRole[activeRole],
-      content,
-      codeBlock,
+      createdAt: 'Just now',
+      content: payload.content,
+      codeBlock: payload.codeBlock,
+      attachmentLabel: payload.attachmentLabel,
+      facultyNote: isVerified
+        ? 'Verified: Official faculty explanation.'
+        : undefined,
       isPeerAccepted: false,
-      isTeacherVerified: activeRole === 'teacher',
+      isTeacherVerified: isVerified,
       isHiddenByModerator: false,
       moderationReason: '',
       ratings: {
@@ -137,18 +181,44 @@ export default function App() {
     );
   };
 
-  const handleToggleTeacherVerify = (doubtId: string, answerId: string) => {
+  const handleToggleTeacherVerify = (
+    doubtId: string,
+    answerId: string,
+    defaultNote?: string
+  ) => {
     setDoubts((prev) =>
       prev.map((d) => {
         if (d.id !== doubtId) return d;
-        const updatedAnswers = d.answers.map((a) =>
-          a.id === answerId ? { ...a, isTeacherVerified: !a.isTeacherVerified } : a
-        );
+        const updatedAnswers = d.answers.map((a) => {
+          if (a.id !== answerId) return a;
+          const nextVerified = !a.isTeacherVerified;
+          return {
+            ...a,
+            isTeacherVerified: nextVerified,
+            facultyNote: nextVerified ? a.facultyNote || defaultNote : a.facultyNote,
+          };
+        });
         return {
           ...d,
           answers: updatedAnswers,
           status: recomputeDoubtStatus(updatedAnswers),
         };
+      })
+    );
+  };
+
+  const handleUpdateFacultyNote = (
+    doubtId: string,
+    answerId: string,
+    facultyNote: string
+  ) => {
+    setDoubts((prev) =>
+      prev.map((d) => {
+        if (d.id !== doubtId) return d;
+        const updatedAnswers = d.answers.map((a) =>
+          a.id === answerId ? { ...a, facultyNote } : a
+        );
+        return { ...d, answers: updatedAnswers };
       })
     );
   };
@@ -164,6 +234,8 @@ export default function App() {
             ...a,
             isHiddenByModerator: nextHidden,
             moderationReason: nextHidden ? reason : '',
+            isPeerAccepted: nextHidden ? false : a.isPeerAccepted,
+            isTeacherVerified: nextHidden ? false : a.isTeacherVerified,
           };
         });
         return {
@@ -198,6 +270,31 @@ export default function App() {
     );
   };
 
+  const handleEscalateFromAiFriend = (questionText: string): Doubt => {
+    const authorNameByRole: Record<UserRole, string> = {
+      asker: 'Aarav Sharma',
+      peer: 'Priya Deshmukh',
+      teacher: 'Prof. R. K. Kulkarni',
+    };
+
+    const newDoubt: Doubt = {
+      id: Date.now().toString(),
+      title: questionText,
+      description: `Escalated from 24×7 AI Study Friend because no Teacher-Verified or Peer-Accepted campus solution existed yet.`,
+      subject: 'C Programming',
+      topic: 'General',
+      authorName: authorNameByRole[activeRole],
+      createdAt: 'Just now',
+      waitingHours: 0,
+      status: 'unresolved',
+      attachments: [],
+      answers: [],
+    };
+    setDoubts((prev) => [newDoubt, ...prev]);
+    setToastMessage('Escalated to Doubt Feed & Unresolved Tracker!');
+    return newDoubt;
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
       <TopNav
@@ -212,6 +309,25 @@ export default function App() {
         onRoleChange={setActiveRole}
       />
 
+      {toastMessage && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-5 right-5 z-50 max-w-md bg-slate-900 text-white px-4 py-3 rounded-xl shadow-lg border border-slate-700 flex items-center gap-3"
+        >
+          <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+          <span className="text-sm font-medium">{toastMessage}</span>
+          <button
+            type="button"
+            onClick={() => setToastMessage(null)}
+            aria-label="Dismiss notification"
+            className="text-slate-400 hover:text-white p-0.5 rounded"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {selectedDoubt ? (
           <DoubtDetailView
@@ -222,6 +338,7 @@ export default function App() {
             onAddAnswer={handleAddAnswer}
             onTogglePeerAccept={handleTogglePeerAccept}
             onToggleTeacherVerify={handleToggleTeacherVerify}
+            onUpdateFacultyNote={handleUpdateFacultyNote}
             onToggleModeration={handleToggleModeration}
             onRateAnswer={handleRateAnswer}
           />
@@ -236,8 +353,10 @@ export default function App() {
           />
         ) : activeTab === 'ask' ? (
           <AskDoubtView
+            doubts={doubts}
             activePersona={activePersona}
             onCancel={() => handleSelectTab('feed')}
+            onSelectDoubt={handleSelectDoubt}
             onCreateDoubt={handleCreateDoubt}
           />
         ) : activeTab === 'unresolved' ? (
@@ -248,10 +367,16 @@ export default function App() {
         ) : activeTab === 'ai_friend' ? (
           <AiFriendView
             doubts={doubts}
+            activePersona={activePersona}
             onSelectDoubt={handleSelectDoubt}
+            onEscalateDoubt={handleEscalateFromAiFriend}
           />
         ) : (
-          <RatraaPlannerView />
+          <RatraaPlannerView
+            doubts={doubts}
+            activePersona={activePersona}
+            onSelectDoubt={handleSelectDoubt}
+          />
         )}
       </main>
     </div>

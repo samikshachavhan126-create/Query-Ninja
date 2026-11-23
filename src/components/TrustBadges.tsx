@@ -6,6 +6,9 @@ interface TrustBadgesProps {
 }
 
 export function formatWaitingTime(hours: number): string {
+  if (hours <= 0) {
+    return 'Just now';
+  }
   if (hours < 1) {
     const mins = Math.max(1, Math.round(hours * 60));
     return `${mins}m`;
@@ -36,7 +39,9 @@ export function TrustBadges({ doubt }: TrustBadgesProps) {
         >
           <Clock className="w-3.5 h-3.5 shrink-0" />
           <span>
-            Unresolved • Waiting {formatWaitingTime(doubt.waitingHours)}
+            {doubt.waitingHours <= 0
+              ? 'Unresolved • Just now'
+              : `Unresolved • Waiting ${formatWaitingTime(doubt.waitingHours)}`}
           </span>
         </span>
       )}
