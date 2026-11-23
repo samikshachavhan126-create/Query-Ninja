@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, X } from 'lucide-react';
+import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import { INITIAL_DOUBTS, PERSONAS } from './data/seedData';
 import {
   Answer,
@@ -11,6 +12,7 @@ import {
   UserRole,
 } from './types';
 import { TopNav } from './components/TopNav';
+import { OnboardingView } from './components/OnboardingView';
 import { DoubtFeedView } from './components/DoubtFeedView';
 import { DoubtDetailView } from './components/DoubtDetailView';
 import { AskDoubtView } from './components/AskDoubtView';
@@ -27,6 +29,7 @@ function recomputeDoubtStatus(answers: Answer[]): DoubtStatus {
 }
 
 export default function App() {
+  const [showOnboarding, setShowOnboarding] = useState(true);
   const [doubts, setDoubts] = useState<Doubt[]>(INITIAL_DOUBTS);
   const [activeTab, setActiveTab] = useState<NavTab>('feed');
   const [selectedDoubtId, setSelectedDoubtId] = useState<string | null>(null);
@@ -295,90 +298,118 @@ export default function App() {
     return newDoubt;
   };
 
+  const handleCompleteOnboarding = () => {
+    setActiveTab('feed');
+    setSelectedDoubtId(null);
+    setShowOnboarding(false);
+  };
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
-      <TopNav
-        activeTab={activeTab}
-        onSelectTab={handleSelectTab}
-        searchQuery={searchQuery}
-        onSearchChange={handleSearchChange}
-        totalDoubtsCount={doubts.length}
-        unresolvedCount={unresolvedCount}
-        personas={PERSONAS}
-        activeRole={activeRole}
-        onRoleChange={setActiveRole}
-      />
-
-      {toastMessage && (
-        <div
-          role="status"
-          aria-live="polite"
-          className="fixed bottom-5 right-5 z-50 max-w-md bg-slate-900 text-white px-4 py-3 rounded-xl shadow-lg border border-slate-700 flex items-center gap-3"
-        >
-          <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-          <span className="text-sm font-medium">{toastMessage}</span>
-          <button
-            type="button"
-            onClick={() => setToastMessage(null)}
-            aria-label="Dismiss notification"
-            className="text-slate-400 hover:text-white p-0.5 rounded"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      )}
-
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        {selectedDoubt ? (
-          <DoubtDetailView
-            doubt={selectedDoubt}
-            activeRole={activeRole}
-            activePersona={activePersona}
-            onBack={() => setSelectedDoubtId(null)}
-            onAddAnswer={handleAddAnswer}
-            onTogglePeerAccept={handleTogglePeerAccept}
-            onToggleTeacherVerify={handleToggleTeacherVerify}
-            onUpdateFacultyNote={handleUpdateFacultyNote}
-            onToggleModeration={handleToggleModeration}
-            onRateAnswer={handleRateAnswer}
-          />
-        ) : activeTab === 'feed' ? (
-          <DoubtFeedView
-            doubts={doubts}
-            searchQuery={searchQuery}
-            onClearSearch={() => setSearchQuery('')}
-            onSelectDoubt={handleSelectDoubt}
-            onOpenAskDoubt={() => handleSelectTab('ask')}
-            activeRole={activeRole}
-          />
-        ) : activeTab === 'ask' ? (
-          <AskDoubtView
-            doubts={doubts}
-            activePersona={activePersona}
-            onCancel={() => handleSelectTab('feed')}
-            onSelectDoubt={handleSelectDoubt}
-            onCreateDoubt={handleCreateDoubt}
-          />
-        ) : activeTab === 'unresolved' ? (
-          <UnresolvedTrackerView
-            doubts={doubts}
-            onSelectDoubt={handleSelectDoubt}
-          />
-        ) : activeTab === 'ai_friend' ? (
-          <AiFriendView
-            doubts={doubts}
-            activePersona={activePersona}
-            onSelectDoubt={handleSelectDoubt}
-            onEscalateDoubt={handleEscalateFromAiFriend}
+    <MotionConfig reducedMotion="user">
+      <AnimatePresence mode="wait">
+        {showOnboarding ? (
+          <OnboardingView
+            key="onboarding"
+            personas={PERSONAS}
+            selectedRole={activeRole}
+            onSelectRole={setActiveRole}
+            onGetStarted={handleCompleteOnboarding}
+            totalDoubtsCount={doubts.length}
+            unresolvedCount={unresolvedCount}
           />
         ) : (
-          <RatraaPlannerView
-            doubts={doubts}
-            activePersona={activePersona}
-            onSelectDoubt={handleSelectDoubt}
-          />
+          <motion.div
+            key="app-workspace"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+            className="min-h-screen bg-slate-50 text-slate-900 flex flex-col"
+          >
+            <TopNav
+              activeTab={activeTab}
+              onSelectTab={handleSelectTab}
+              searchQuery={searchQuery}
+              onSearchChange={handleSearchChange}
+              totalDoubtsCount={doubts.length}
+              unresolvedCount={unresolvedCount}
+              personas={PERSONAS}
+              activeRole={activeRole}
+              onRoleChange={setActiveRole}
+            />
+
+            {toastMessage && (
+              <div
+                role="status"
+                aria-live="polite"
+                className="fixed bottom-5 right-5 z-50 max-w-md bg-slate-900 text-white px-4 py-3 rounded-xl shadow-lg border border-slate-700 flex items-center gap-3"
+              >
+                <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+                <span className="text-sm font-medium">{toastMessage}</span>
+                <button
+                  type="button"
+                  onClick={() => setToastMessage(null)}
+                  aria-label="Dismiss notification"
+                  className="text-slate-400 hover:text-white p-0.5 rounded"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
+            <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+              {selectedDoubt ? (
+                <DoubtDetailView
+                  doubt={selectedDoubt}
+                  activeRole={activeRole}
+                  activePersona={activePersona}
+                  onBack={() => setSelectedDoubtId(null)}
+                  onAddAnswer={handleAddAnswer}
+                  onTogglePeerAccept={handleTogglePeerAccept}
+                  onToggleTeacherVerify={handleToggleTeacherVerify}
+                  onUpdateFacultyNote={handleUpdateFacultyNote}
+                  onToggleModeration={handleToggleModeration}
+                  onRateAnswer={handleRateAnswer}
+                />
+              ) : activeTab === 'feed' ? (
+                <DoubtFeedView
+                  doubts={doubts}
+                  searchQuery={searchQuery}
+                  onClearSearch={() => setSearchQuery('')}
+                  onSelectDoubt={handleSelectDoubt}
+                  onOpenAskDoubt={() => handleSelectTab('ask')}
+                  activeRole={activeRole}
+                />
+              ) : activeTab === 'ask' ? (
+                <AskDoubtView
+                  doubts={doubts}
+                  activePersona={activePersona}
+                  onCancel={() => handleSelectTab('feed')}
+                  onSelectDoubt={handleSelectDoubt}
+                  onCreateDoubt={handleCreateDoubt}
+                />
+              ) : activeTab === 'unresolved' ? (
+                <UnresolvedTrackerView
+                  doubts={doubts}
+                  onSelectDoubt={handleSelectDoubt}
+                />
+              ) : activeTab === 'ai_friend' ? (
+                <AiFriendView
+                  doubts={doubts}
+                  activePersona={activePersona}
+                  onSelectDoubt={handleSelectDoubt}
+                  onEscalateDoubt={handleEscalateFromAiFriend}
+                />
+              ) : (
+                <RatraaPlannerView
+                  doubts={doubts}
+                  activePersona={activePersona}
+                  onSelectDoubt={handleSelectDoubt}
+                />
+              )}
+            </main>
+          </motion.div>
         )}
-      </main>
-    </div>
+      </AnimatePresence>
+    </MotionConfig>
   );
 }

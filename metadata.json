@@ -2,5 +2,7 @@
   "name": "Query Ninja",
   "description": "A moderated peer learning and doubt resolution platform for college students.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }
