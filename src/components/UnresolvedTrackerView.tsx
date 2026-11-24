@@ -7,9 +7,12 @@ import {
   Clock,
   Layers,
   Lightbulb,
+  Search,
   Trophy,
+  X,
 } from 'lucide-react';
 import { Doubt } from '../types';
+import { UNRESOLVED_SUBJECT_FILTERS } from '../data/languages';
 import { getDoubtTrustState } from './TrustBadges';
 
 interface UnresolvedTrackerViewProps {
@@ -18,14 +21,6 @@ interface UnresolvedTrackerViewProps {
 }
 
 type TrackerSortMode = 'waiting' | 'topic';
-
-const SUBJECT_FILTERS = [
-  'All Subjects',
-  'C Programming',
-  'Data Structures',
-  'Algorithms',
-  'Engineering Mathematics',
-];
 
 const TOP_SOLVERS = [
   {
@@ -64,6 +59,7 @@ export function UnresolvedTrackerView({
 }: UnresolvedTrackerViewProps) {
   const [sortMode, setSortMode] = useState<TrackerSortMode>('waiting');
   const [subjectFilter, setSubjectFilter] = useState<string>('All Subjects');
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
   // All doubts without any visible Peer-Accepted or Teacher-Verified answer
   const allUnresolved = useMemo(
@@ -71,11 +67,55 @@ export function UnresolvedTrackerView({
     [doubts]
   );
 
-  // Teacher "What to Re-Teach" Insight: topic with highest open doubt count
-  const topUnresolvedTopic = useMemo(() => {
-    if (allUnresolved.length === 0) return null;
+  // Merge canonical subject filters with any dynamic subjects present in open doubts
+  const subjectFilters = useMemo(() => {
+    const known = new Set<string>(UNRESOLVED_SUBJECT_FILTERS);
+    const extras = allUnresolved
+      .map((d) => d.subject)
+      .filter((s) => !known.has(s));
+    return [...UNRESOLVED_SUBJECT_FILTERS, ...Array.from(new Set(extras))];
+  }, [allUnresolved]);
+
+  const openCountBySubject = useMemo(() => {
     const counts = new Map<string, number>();
     for (const d of allUnresolved) {
+      counts.set(d.subject, (counts.get(d.subject) ?? 0) + 1);
+    }
+    return counts;
+  }, [allUnresolved]);
+
+  const filteredUnresolved = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    const base = allUnresolved.filter((d) => {
+      if (subjectFilter !== 'All Subjects' && d.subject !== subjectFilter) {
+        return false;
+      }
+      if (q) {
+        const haystack = [
+          d.title,
+          d.description,
+          d.subject,
+          d.topic,
+          d.authorName,
+          ...d.attachments,
+        ]
+          .join(' ')
+          .toLowerCase();
+        if (!haystack.includes(q)) return false;
+      }
+      return true;
+    });
+
+    return [...base].sort((a, b) => b.waitingHours - a.waitingHours);
+  }, [allUnresolved, subjectFilter, searchQuery]);
+
+  // Teacher "What to Re-Teach" Insight: topic with highest open doubt count in active queue
+  const topUnresolvedTopic = useMemo(() => {
+    const source =
+      subjectFilter === 'All Subjects' ? allUnresolved : filteredUnresolved;
+    if (source.length === 0) return null;
+    const counts = new Map<string, number>();
+    for (const d of source) {
       counts.set(d.topic, (counts.get(d.topic) ?? 0) + 1);
     }
     let bestTopic = '';
@@ -87,16 +127,7 @@ export function UnresolvedTrackerView({
       }
     }
     return { topic: bestTopic, count: bestCount };
-  }, [allUnresolved]);
-
-  const filteredUnresolved = useMemo(() => {
-    const base =
-      subjectFilter === 'All Subjects'
-        ? allUnresolved
-        : allUnresolved.filter((d) => d.subject === subjectFilter);
-
-    return [...base].sort((a, b) => b.waitingHours - a.waitingHours);
-  }, [allUnresolved, subjectFilter]);
+  }, [allUnresolved, filteredUnresolved, subjectFilter]);
 
   const groupedByTopic = useMemo(() => {
     const map = new Map<string, Doubt[]>();
@@ -211,13 +242,16 @@ export function UnresolvedTrackerView({
             <Lightbulb className="w-4 h-4" />
           </span>
           <p className="text-sm text-blue-950 dark:text-blue-200 leading-relaxed">
-            <strong>Faculty Pulse:</strong>{' '}
+            <strong>
+              Faculty Pulse
+              {subjectFilter !== 'All Subjects' ? ` (${subjectFilter})` : ''}:
+            </strong>{' '}
             <span className="font-semibold">&lsquo;{topUnresolvedTopic.topic}&rsquo;</span>{' '}
             currently leads with{' '}
             <span className="tabular-nums font-semibold">
               {topUnresolvedTopic.count}
             </span>{' '}
-            open doubts — ideal for your next lecture recap.
+            open {topUnresolvedTopic.count === 1 ? 'doubt' : 'doubts'} — ideal for your next lecture recap.
           </p>
         </div>
       )}
@@ -253,22 +287,53 @@ export function UnresolvedTrackerView({
           </button>
         </div>
 
-        <div className="flex items-center gap-2">
-          <label htmlFor="tracker-subject" className="text-xs font-medium text-slate-500 dark:text-slate-400">
-            Subject:
-          </label>
-          <select
-            id="tracker-subject"
-            value={subjectFilter}
-            onChange={(e) => setSubjectFilter(e.target.value)}
-            className="text-xs font-medium bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-slate-700 dark:text-slate-200 focus:outline-none focus:border-indigo-500"
-          >
-            {SUBJECT_FILTERS.map((subj) => (
-              <option key={subj} value={subj}>
-                {subj}
-              </option>
-            ))}
-          </select>
+        <div className="flex flex-wrap items-center gap-2.5 flex-1 sm:flex-initial justify-end">
+          {/* Tracker Keyword Search */}
+          <div className="relative flex-1 sm:w-56 min-w-[180px]">
+            <Search className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search open doubts..."
+              aria-label="Search unresolved doubts by keyword, language, or topic"
+              className="w-full pl-8 pr-7 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-indigo-500"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                aria-label="Clear tracker search"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <label htmlFor="tracker-subject" className="text-xs font-medium text-slate-500 dark:text-slate-400">
+              Subject:
+            </label>
+            <select
+              id="tracker-subject"
+              value={subjectFilter}
+              onChange={(e) => setSubjectFilter(e.target.value)}
+              className="text-xs font-medium bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-slate-700 dark:text-slate-200 focus:outline-none focus:border-indigo-500"
+            >
+              {subjectFilters.map((subj) => {
+                const count =
+                  subj === 'All Subjects'
+                    ? allUnresolved.length
+                    : openCountBySubject.get(subj) ?? 0;
+                return (
+                  <option key={subj} value={subj}>
+                    {subj} ({count})
+                  </option>
+                );
+              })}
+            </select>
+          </div>
         </div>
       </div>
 
@@ -279,13 +344,29 @@ export function UnresolvedTrackerView({
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs p-10 text-center">
               <CheckCircle2 className="w-10 h-10 text-emerald-600 dark:text-emerald-400 mx-auto mb-3" />
               <h2 className="font-display text-lg font-bold text-slate-900 dark:text-slate-100">
-                Queue cleared!
+                {searchQuery.trim()
+                  ? 'No matching open doubts'
+                  : 'Queue cleared!'}
               </h2>
               <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                {subjectFilter === 'All Subjects'
-                  ? 'Every question now has at least one Peer-Accepted or Teacher-Verified walkthrough.'
-                  : `All doubts in ${subjectFilter} are currently resolved.`}
+                {searchQuery.trim()
+                  ? 'Try clearing your search keyword or switching to All Subjects.'
+                  : subjectFilter === 'All Subjects'
+                    ? 'Every question now has at least one Peer-Accepted or Teacher-Verified walkthrough.'
+                    : `All doubts in ${subjectFilter} are currently resolved.`}
               </p>
+              {(searchQuery.trim() || subjectFilter !== 'All Subjects') && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setSubjectFilter('All Subjects');
+                  }}
+                  className="mt-4 px-4 py-2 rounded-lg text-xs font-semibold border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                >
+                  Reset Tracker Filters
+                </button>
+              )}
             </div>
           ) : sortMode === 'waiting' ? (
             <div className="space-y-3.5">{filteredUnresolved.map(renderQueueCard)}</div>

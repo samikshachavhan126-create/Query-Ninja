@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { Doubt, UserRole } from '../types';
 import { TrustBadges, getDoubtTrustState } from './TrustBadges';
+import { PopularTopicsCloud } from './PopularTopicsCloud';
 
 interface DoubtFeedViewProps {
   doubts: Doubt[];
@@ -101,6 +102,20 @@ export function DoubtFeedView({
     onClearSearch();
   };
 
+  const handleSelectTrendingTopic = (topic: string) => {
+    if (topic === 'All' || topicFilter === topic) {
+      setTopicFilter('All');
+      return;
+    }
+    setTopicFilter(topic);
+    if (
+      subjectFilter !== 'All' &&
+      !doubts.some((d) => d.topic === topic && d.subject === subjectFilter)
+    ) {
+      setSubjectFilter('All');
+    }
+  };
+
   return (
     <section className="space-y-5">
       {/* Page Title & Role Context Strip */}
@@ -110,7 +125,7 @@ export function DoubtFeedView({
             Academic Doubt Feed
           </h1>
           <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-            Peer-powered, faculty-curated engineering Q&amp;A for First-Year CSE.
+            Peer-powered, faculty-curated Q&amp;A across C, Python, C++, JS/TS, Java, DSA &amp; Math.
           </p>
         </div>
         <div className="text-xs font-medium text-slate-500 dark:text-slate-400 tabular-nums">
@@ -119,108 +134,111 @@ export function DoubtFeedView({
         </div>
       </div>
 
-      {/* Compact Filter Bar */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs p-3.5 sm:p-4 space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          {/* Subject Segmented Filter */}
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 mr-1">
-              <SlidersHorizontal className="w-3.5 h-3.5" />
-              Subject:
-            </span>
-            {subjects.map((subject) => (
-              <button
-                key={subject}
-                type="button"
-                onClick={() => setSubjectFilter(subject)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
-                  subjectFilter === subject
-                    ? 'bg-indigo-600 text-white shadow-xs'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200/80 dark:hover:bg-slate-700'
-                }`}
-              >
-                {subject}
-              </button>
-            ))}
+      {/* 2-Column Layout: Doubt Feed (Left) + Popular Topics Tag Cloud (Right) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <div className="lg:col-span-8 space-y-5 order-2 lg:order-1">
+          {/* Compact Filter Bar */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs p-3.5 sm:p-4 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              {/* Subject Segmented Filter */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 mr-1">
+                  <SlidersHorizontal className="w-3.5 h-3.5" />
+                  Subject:
+                </span>
+                {subjects.map((subject) => (
+                  <button
+                    key={subject}
+                    type="button"
+                    onClick={() => setSubjectFilter(subject)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
+                      subjectFilter === subject
+                        ? 'bg-indigo-600 text-white shadow-xs'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200/80 dark:hover:bg-slate-700'
+                    }`}
+                  >
+                    {subject}
+                  </button>
+                ))}
+              </div>
+
+              {/* Sort Selector */}
+              <div className="flex items-center gap-2">
+                <label htmlFor="feed-sort" className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                  Sort:
+                </label>
+                <select
+                  id="feed-sort"
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as SortOption)}
+                  className="text-xs font-medium bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-700 dark:text-slate-200 focus:outline-none focus:border-indigo-500"
+                >
+                  <option value="recent">Feed Order</option>
+                  <option value="priority">Longest Waiting</option>
+                  <option value="answers">Most Answers</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Status & Topic Row */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2.5 border-t border-slate-100 dark:border-slate-800">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 mr-1">Status:</span>
+                {(
+                  [
+                    { id: 'all', label: 'All' },
+                    { id: 'unresolved', label: 'Unresolved' },
+                    { id: 'peer_accepted', label: 'Peer-Accepted' },
+                    { id: 'teacher_verified', label: 'Teacher-Verified' },
+                  ] as const
+                ).map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setStatusFilter(item.id)}
+                    className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap ${
+                      statusFilter === item.id
+                        ? 'bg-slate-900 dark:bg-indigo-600 text-white'
+                        : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <label htmlFor="feed-topic" className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                  Topic:
+                </label>
+                <select
+                  id="feed-topic"
+                  value={topicFilter}
+                  onChange={(e) => setTopicFilter(e.target.value)}
+                  className="text-xs font-medium bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-700 dark:text-slate-200 focus:outline-none focus:border-indigo-500 max-w-[190px]"
+                >
+                  {topics.map((topic) => (
+                    <option key={topic} value={topic}>
+                      {topic === 'All' ? 'All Topics' : topic}
+                    </option>
+                  ))}
+                </select>
+
+                {hasActiveFilters && (
+                  <button
+                    type="button"
+                    onClick={resetAllFilters}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors whitespace-nowrap"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    Reset
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
 
-          {/* Sort Selector */}
-          <div className="flex items-center gap-2">
-            <label htmlFor="feed-sort" className="text-xs font-medium text-slate-500 dark:text-slate-400">
-              Sort:
-            </label>
-            <select
-              id="feed-sort"
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as SortOption)}
-              className="text-xs font-medium bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-700 dark:text-slate-200 focus:outline-none focus:border-indigo-500"
-            >
-              <option value="recent">Feed Order</option>
-              <option value="priority">Longest Waiting</option>
-              <option value="answers">Most Answers</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Status & Topic Row */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-2.5 border-t border-slate-100 dark:border-slate-800">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 mr-1">Status:</span>
-            {(
-              [
-                { id: 'all', label: 'All' },
-                { id: 'unresolved', label: 'Unresolved' },
-                { id: 'peer_accepted', label: 'Peer-Accepted' },
-                { id: 'teacher_verified', label: 'Teacher-Verified' },
-              ] as const
-            ).map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setStatusFilter(item.id)}
-                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap ${
-                  statusFilter === item.id
-                    ? 'bg-slate-900 dark:bg-indigo-600 text-white'
-                    : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
-                }`}
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 mr-1">Topic:</span>
-            {topics.map((topic) => (
-              <button
-                key={topic}
-                type="button"
-                onClick={() => setTopicFilter(topic)}
-                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap ${
-                  topicFilter === topic
-                    ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700/80 font-semibold'
-                    : 'bg-slate-50 dark:bg-slate-800/70 text-slate-600 dark:text-slate-300 border border-transparent hover:bg-slate-100 dark:hover:bg-slate-800'
-                }`}
-              >
-                {topic}
-              </button>
-            ))}
-
-            {hasActiveFilters && (
-              <button
-                type="button"
-                onClick={resetAllFilters}
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors whitespace-nowrap ml-1"
-              >
-                <RotateCcw className="w-3 h-3" />
-                Reset
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Doubt Cards List */}
+          {/* Doubt Cards List */}
       {filteredDoubts.length === 0 ? (
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs p-10 text-center">
           <p className="font-display text-base font-semibold text-slate-900 dark:text-slate-100">
@@ -359,6 +377,16 @@ export function DoubtFeedView({
           })}
         </div>
       )}
+        </div>
+
+        <div className="lg:col-span-4 lg:sticky lg:top-28 order-1 lg:order-2">
+          <PopularTopicsCloud
+            doubts={doubts}
+            activeTopic={topicFilter}
+            onSelectTopic={handleSelectTrendingTopic}
+          />
+        </div>
+      </div>
     </section>
   );
 }

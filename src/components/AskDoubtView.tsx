@@ -16,6 +16,11 @@ import {
   UserCheck,
 } from 'lucide-react';
 import { Doubt, DoubtAttachment, Persona } from '../types';
+import {
+  CODE_FILENAME_BY_SUBJECT,
+  QUICK_TOPICS_BY_SUBJECT,
+  SUBJECT_OPTIONS,
+} from '../data/languages';
 import { findSimilarDoubts } from '../utils/similarity';
 import { TrustBadges } from './TrustBadges';
 
@@ -33,21 +38,6 @@ interface AskDoubtViewProps {
     attachment: DoubtAttachment | null;
   }) => void;
 }
-
-const SUBJECT_OPTIONS = [
-  'C Programming',
-  'Data Structures',
-  'Algorithms',
-  'Engineering Mathematics',
-];
-
-const QUICK_TOPICS = [
-  'Pointers & Memory',
-  'Input / Output',
-  'Linked Lists',
-  'Recursion',
-  'Sorting',
-];
 
 type AttachmentChoice = 'none' | 'code' | 'pdf' | 'image' | 'video';
 
@@ -106,13 +96,31 @@ export function AskDoubtView({
     [title, description, doubts]
   );
 
+  const quickTopics =
+    QUICK_TOPICS_BY_SUBJECT[subject] ?? QUICK_TOPICS_BY_SUBJECT['C Programming'];
+  const defaultCodeFilename = CODE_FILENAME_BY_SUBJECT[subject] ?? 'snippet.c';
+
+  const handleSubjectChange = (nextSubject: string) => {
+    setSubject(nextSubject);
+    const nextTopics = QUICK_TOPICS_BY_SUBJECT[nextSubject];
+    if (nextTopics && nextTopics.length > 0) {
+      setTopic(nextTopics[0]);
+    }
+    if (attachmentType === 'code') {
+      const prevDefault = CODE_FILENAME_BY_SUBJECT[subject] ?? 'snippet.c';
+      if (!attachmentLabel || attachmentLabel === prevDefault) {
+        setAttachmentLabel(CODE_FILENAME_BY_SUBJECT[nextSubject] ?? 'snippet.c');
+      }
+    }
+  };
+
   const handleSelectAttachmentType = (choice: AttachmentChoice) => {
     setAttachmentType(choice);
     if (choice === 'none') {
       setAttachmentLabel('');
       setAttachmentContent('');
     } else if (choice === 'code') {
-      setAttachmentLabel('snippet.c');
+      setAttachmentLabel(defaultCodeFilename);
       setAttachmentContent('');
     } else {
       setAttachmentLabel('');
@@ -143,7 +151,7 @@ export function AskDoubtView({
     if (attachmentType !== 'none') {
       const fallbackLabel =
         attachmentType === 'code'
-          ? 'snippet.c'
+          ? defaultCodeFilename
           : SAMPLE_PRESETS[attachmentType].sampleFile;
       finalAttachment = {
         type: attachmentType,
@@ -255,7 +263,7 @@ export function AskDoubtView({
                 setTitle(e.target.value);
                 if (duplicateAvoidedBanner) setDuplicateAvoidedBanner(false);
               }}
-              placeholder="e.g., Why does scanf() skip character input, or how do I trace a pointer segfault?"
+              placeholder="e.g., Why does Python retain mutable defaults, or why does std::vector invalidate iterators?"
               className="w-full px-3.5 py-2.5 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 transition-all"
             />
           </div>
@@ -272,7 +280,7 @@ export function AskDoubtView({
               <select
                 id="doubt-subject"
                 value={subject}
-                onChange={(e) => setSubject(e.target.value)}
+                onChange={(e) => handleSubjectChange(e.target.value)}
                 className="w-full px-3.5 py-2.5 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-500"
               >
                 {SUBJECT_OPTIONS.map((opt) => (
@@ -304,7 +312,7 @@ export function AskDoubtView({
           {/* Quick-Fill Topic Tag Chips */}
           <div className="-mt-2 flex flex-wrap items-center gap-1.5">
             <span className="text-xs font-medium text-slate-500 dark:text-slate-400 mr-1">Quick topics:</span>
-            {QUICK_TOPICS.map((chip) => {
+            {quickTopics.map((chip) => {
               const isActive = topic.trim().toLowerCase() === chip.toLowerCase();
               return (
                 <button
@@ -434,7 +442,7 @@ export function AskDoubtView({
                     type="text"
                     value={attachmentLabel}
                     onChange={(e) => setAttachmentLabel(e.target.value)}
-                    placeholder="snippet.c"
+                    placeholder={defaultCodeFilename}
                     className="flex-1 px-3 py-1.5 text-xs font-mono bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
                   />
                 </div>
@@ -442,7 +450,7 @@ export function AskDoubtView({
                   rows={5}
                   value={attachmentContent}
                   onChange={(e) => setAttachmentContent(e.target.value)}
-                  placeholder="// Paste your C / C++ / DSA code snippet here..."
+                  placeholder="// Paste your C / Python / C++ / TypeScript / Java code snippet here..."
                   className="w-full p-3 text-xs font-mono bg-slate-900 dark:bg-slate-950 text-slate-100 border border-slate-800 rounded-lg placeholder:text-slate-500 focus:outline-none focus:border-indigo-500"
                 />
               </div>
@@ -591,6 +599,10 @@ export function AskDoubtView({
                           </span>
                           <TrustBadges doubt={doubt} />
                         </div>
+
+                        <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                          {doubt.subject} · {doubt.topic}
+                        </p>
 
                         <h3 className="font-display text-sm font-bold text-slate-900 dark:text-slate-100 leading-snug">
                           {doubt.title}

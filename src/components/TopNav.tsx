@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Search,
   X,
@@ -12,12 +12,19 @@ import {
   UserCheck,
   GraduationCap,
   Award,
+  CheckCircle2,
+  ThumbsUp,
+  Trophy,
+  UserCircle2,
+  ArrowRight,
 } from 'lucide-react';
-import { NavTab, Persona, UserRole } from '../types';
+import { Doubt, NavTab, Persona, UserRole } from '../types';
+import { computeUserActivity } from '../utils/userActivity';
 import { BrandLogo } from './BrandLogo';
 import { ThemeToggle } from './ThemeToggle';
 
 interface TopNavProps {
+  doubts: Doubt[];
   activeTab: NavTab;
   onSelectTab: (tab: NavTab) => void;
   searchQuery: string;
@@ -32,6 +39,7 @@ interface TopNavProps {
 }
 
 export function TopNav({
+  doubts,
   activeTab,
   onSelectTab,
   searchQuery,
@@ -45,7 +53,9 @@ export function TopNav({
   onToggleTheme,
 }: TopNavProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [profilePinned, setProfilePinned] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const profileRef = useRef<HTMLDivElement>(null);
 
   const isMac =
     typeof navigator !== 'undefined' &&
@@ -54,15 +64,24 @@ export function TopNav({
 
   const currentPersona = personas.find((p) => p.id === activeRole) ?? personas[0];
 
+  const activity = useMemo(
+    () => computeUserActivity(doubts, currentPersona),
+    [doubts, currentPersona]
+  );
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setDropdownOpen(false);
       }
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setProfilePinned(false);
+      }
     }
     function handleEscape(event: KeyboardEvent) {
       if (event.key === 'Escape') {
         setDropdownOpen(false);
+        setProfilePinned(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -106,7 +125,7 @@ export function TopNav({
                 type="text"
                 value={searchQuery}
                 onChange={(e) => onSearchChange(e.target.value)}
-                placeholder="Search doubts, C syntax, pointers, sorting..."
+                placeholder="Search doubts across Python, C++, JS/TS, Java, C..."
                 aria-label="Search doubts by keyword, subject, or topic"
                 className="w-full pl-9 pr-8 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 transition-all"
               />
@@ -123,8 +142,160 @@ export function TopNav({
             </div>
           </div>
 
-          {/* Right: Theme Switch + Instant Role Switcher Pill Dropdown */}
-          <div className="flex items-center gap-2.5 shrink-0">
+          {/* Right: User Profile Badges + Theme Switch + Instant Role Switcher Pill Dropdown */}
+          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+            {/* User Profile Badges & Hover Rank Tooltip */}
+            <div ref={profileRef} className="relative group shrink-0">
+              <button
+                type="button"
+                onClick={() => setProfilePinned((prev) => !prev)}
+                aria-expanded={profilePinned}
+                aria-label={`${currentPersona.shortName} profile: ${activity.solvedCount} solved, ${
+                  activity.isHelpfulContributor ? 'Helpful Contributor' : 'Building contributor status'
+                }, ${activity.rankTier.title}. Hover or press for rank details.`}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/90 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+              >
+                {/* Cumulative Solved Count Badge */}
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800/80 whitespace-nowrap tabular-nums">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <span>Solved {activity.solvedCount}</span>
+                </span>
+
+                {/* Helpful Contributor Badge */}
+                <span
+                  className={`hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border whitespace-nowrap tabular-nums ${
+                    activity.isHelpfulContributor
+                      ? 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-800/80'
+                      : 'bg-white text-slate-600 border-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:border-slate-700'
+                  }`}
+                >
+                  <ThumbsUp
+                    className={`w-3 h-3 shrink-0 ${
+                      activity.isHelpfulContributor
+                        ? 'text-indigo-600 dark:text-indigo-400'
+                        : 'text-slate-400 dark:text-slate-500'
+                    }`}
+                  />
+                  <span>
+                    Helpful Contributor
+                    {activity.helpfulVotes > 0 ? ` · ${activity.helpfulVotes}` : ''}
+                  </span>
+                </span>
+              </button>
+
+              {/* Hover / Focus / Click Rank Tier Tooltip */}
+              <div
+                role="tooltip"
+                className={`absolute right-0 top-full mt-2 w-72 sm:w-80 max-w-[calc(100vw-2rem)] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl p-4 z-50 transition-all duration-150 ${
+                  profilePinned
+                    ? 'opacity-100 visible translate-y-0'
+                    : 'opacity-0 invisible translate-y-1 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 group-focus-within:opacity-100 group-focus-within:visible group-focus-within:translate-y-0'
+                }`}
+              >
+                <div className="flex items-start justify-between gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
+                  <div>
+                    <p className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                      {currentPersona.fullName}
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {currentPersona.roleTitle} · {currentPersona.metaText}
+                    </p>
+                  </div>
+                  <span
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border whitespace-nowrap ${activity.rankTier.badgeClasses}`}
+                  >
+                    <Trophy className="w-3 h-3 shrink-0" />
+                    <span>{activity.rankTier.tierLabel}</span>
+                  </span>
+                </div>
+
+                {/* Current Rank Tier & Progress */}
+                <div className="py-3 space-y-2 border-b border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                      Rank Tier:{' '}
+                      <strong className="text-slate-900 dark:text-white">
+                        {activity.rankTier.title}
+                      </strong>
+                    </span>
+                    <span className="text-xs font-mono font-semibold text-indigo-600 dark:text-indigo-400 tabular-nums">
+                      {activity.activityPoints} pts
+                    </span>
+                  </div>
+
+                  <div className="h-1.5 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                    <div
+                      style={{ width: `${activity.progressPercent}%` }}
+                      className="h-full rounded-full bg-indigo-600 dark:bg-indigo-400 transition-all duration-300"
+                    />
+                  </div>
+
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 tabular-nums">
+                    {activity.rankTier.nextTierTitle && activity.rankTier.nextTierPoints !== null
+                      ? `${Math.max(
+                          0,
+                          activity.rankTier.nextTierPoints - activity.activityPoints
+                        )} pts away from ${activity.rankTier.nextTierTitle}`
+                      : 'Top campus contributor tier unlocked'}
+                  </p>
+                </div>
+
+                {/* Activity Breakdown from Live Doubts */}
+                <div className="pt-3 grid grid-cols-2 gap-2 text-xs">
+                  <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800/70">
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">Solved Count</p>
+                    <p className="font-semibold text-slate-900 dark:text-slate-100 tabular-nums mt-0.5">
+                      {activity.solvedCount}{' '}
+                      <span className="font-normal text-slate-500 dark:text-slate-400">
+                        accepted
+                      </span>
+                    </p>
+                  </div>
+                  <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800/70">
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                      Helpful Votes
+                    </p>
+                    <p className="font-semibold text-slate-900 dark:text-slate-100 tabular-nums mt-0.5">
+                      {activity.helpfulVotes}{' '}
+                      <span className="font-normal text-slate-500 dark:text-slate-400">
+                        received
+                      </span>
+                    </p>
+                  </div>
+                  <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800/70">
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                      Replies Posted
+                    </p>
+                    <p className="font-semibold text-slate-900 dark:text-slate-100 tabular-nums mt-0.5">
+                      {activity.totalAnswersCount}
+                    </p>
+                  </div>
+                  <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800/70">
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                      Doubts Raised
+                    </p>
+                    <p className="font-semibold text-slate-900 dark:text-slate-100 tabular-nums mt-0.5">
+                      {activity.askedCount}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-3 mt-3 border-t border-slate-100 dark:border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onSelectTab('profile');
+                      setProfilePinned(false);
+                    }}
+                    className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white transition-colors whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                  >
+                    <span>View Full Learner Profile</span>
+                    <ArrowRight className="w-3.5 h-3.5 shrink-0" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <ThemeToggle isDarkMode={isDarkMode} onToggle={onToggleTheme} />
 
             <div className="relative shrink-0" ref={dropdownRef}>
@@ -240,7 +411,7 @@ export function TopNav({
           </div>
         </div>
 
-        {/* Center / Sub-nav: 5 Navigation Tabs */}
+        {/* Center / Sub-nav: 6 Navigation Tabs */}
         <nav
           aria-label="Primary navigation"
           className="flex items-center justify-between gap-3 py-2 border-t border-slate-100 dark:border-slate-800 overflow-x-auto thin-scrollbar"
@@ -308,6 +479,19 @@ export function TopNav({
             >
               <CalendarClock className="w-4 h-4 shrink-0" />
               <span>Ratraa Planner</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onSelectTab('profile')}
+              className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap shrink-0 ${
+                activeTab === 'profile'
+                  ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/70 dark:text-indigo-300 font-semibold'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-slate-800'
+              }`}
+            >
+              <UserCircle2 className="w-4 h-4 shrink-0" />
+              <span>Learner Profile</span>
             </button>
           </div>
 

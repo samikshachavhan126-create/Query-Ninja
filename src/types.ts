@@ -5,7 +5,8 @@ export type NavTab =
   | 'ask'
   | 'unresolved'
   | 'ai_friend'
-  | 'ratraa';
+  | 'ratraa'
+  | 'profile';
 
 export type DoubtStatus = 'unresolved' | 'peer_accepted' | 'teacher_verified';
 

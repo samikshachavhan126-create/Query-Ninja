@@ -780,7 +780,7 @@ export function DoubtDetailView({
             rows={4}
             value={codeSnippet}
             onChange={(e) => setCodeSnippet(e.target.value)}
-            placeholder="// Paste formatted C / DSA code snippet..."
+            placeholder="// Paste formatted C / Python / C++ / TypeScript / Java code snippet..."
             className="w-full p-3.5 text-xs font-mono bg-slate-900 dark:bg-slate-950 text-slate-100 border border-slate-800 rounded-lg placeholder:text-slate-500 focus:outline-none focus:border-indigo-500"
           />
         )}

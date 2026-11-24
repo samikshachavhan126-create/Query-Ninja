@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, X } from 'lucide-react';
 import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import { INITIAL_DOUBTS, PERSONAS } from './data/seedData';
+import { inferSubjectAndTopicFromQuery } from './data/languages';
 import {
   Answer,
   AnswerRatings,
@@ -20,6 +21,7 @@ import { AskDoubtView } from './components/AskDoubtView';
 import { UnresolvedTrackerView } from './components/UnresolvedTrackerView';
 import { AiFriendView } from './components/AiFriendView';
 import { RatraaPlannerView } from './components/RatraaPlannerView';
+import { LearnerProfileView } from './components/LearnerProfileView';
 import { getDoubtTrustState } from './components/TrustBadges';
 
 function recomputeDoubtStatus(answers: Answer[]): DoubtStatus {
@@ -319,12 +321,14 @@ export default function App() {
       teacher: 'Prof. R. K. Kulkarni',
     };
 
+    const inferred = inferSubjectAndTopicFromQuery(questionText);
+
     const newDoubt: Doubt = {
       id: Date.now().toString(),
       title: questionText,
       description: `Escalated from 24×7 AI Study Friend — no Teacher-Verified or Peer-Accepted campus walkthrough existed yet.`,
-      subject: 'C Programming',
-      topic: 'General',
+      subject: inferred.subject,
+      topic: inferred.topic,
       authorName: authorNameByRole[activeRole],
       createdAt: 'Just now',
       waitingHours: 0,
@@ -372,6 +376,7 @@ export default function App() {
             className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col transition-colors"
           >
             <TopNav
+              doubts={doubts}
               activeTab={activeTab}
               onSelectTab={handleSelectTab}
               searchQuery={searchQuery}
@@ -448,11 +453,19 @@ export default function App() {
                   onSelectDoubt={handleSelectDoubt}
                   onEscalateDoubt={handleEscalateFromAiFriend}
                 />
-              ) : (
+              ) : activeTab === 'ratraa' ? (
                 <RatraaPlannerView
                   doubts={doubts}
                   activePersona={activePersona}
                   onSelectDoubt={handleSelectDoubt}
+                />
+              ) : (
+                <LearnerProfileView
+                  doubts={doubts}
+                  activePersona={activePersona}
+                  onSelectDoubt={handleSelectDoubt}
+                  onOpenUnresolved={() => handleSelectTab('unresolved')}
+                  onBackToFeed={() => handleSelectTab('feed')}
                 />
               )}
             </main>
