@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
   --font-display: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
@@ -7,10 +8,20 @@
 }
 
 @layer base {
+  html {
+    color-scheme: light;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 #f1f5f9;
+  }
+
+  html.dark {
+    color-scheme: dark;
+    scrollbar-width: thin;
+    scrollbar-color: #334155 #020617;
+  }
+
   body {
     font-family: var(--font-sans);
-    background-color: #f8fafc;
-    color: #0f172a;
   }
 
   h1, h2, h3, h4, .font-display {
@@ -22,6 +33,88 @@
   }
 }
 
+/* Custom horizontal & vertical scrollbars for Light and Dark modes */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+.dark * {
+  scrollbar-color: #334155 #0f172a;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+  border: 2px solid #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+::-webkit-scrollbar-corner {
+  background: #f1f5f9;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+  border: 2px solid #0f172a;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+.dark ::-webkit-scrollbar-corner {
+  background: #0f172a;
+}
+
+/* Extra-slim horizontal scrollbar for navigation tabs & code blocks */
+.thin-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  border-width: 1px;
+}
+
+pre::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+pre::-webkit-scrollbar-track {
+  background: #020617;
+  border-radius: 9999px;
+}
+
+pre::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 9999px;
+  border: 1px solid #020617;
+}
+
+pre::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
+

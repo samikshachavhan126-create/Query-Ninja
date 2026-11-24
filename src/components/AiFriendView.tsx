@@ -58,7 +58,7 @@ export function AiFriendView({
     {
       id: 'welcome-1',
       sender: 'assistant',
-      text: `Hi ${activePersona.shortName}! Studying late? Ask me anything from C Programming or Data Structures. I answer strictly using Peer-Accepted and Teacher-Verified campus solutions—and if no verified answer exists yet, I can escalate your question straight to Prof. Kulkarni and our top peer solvers.`,
+      text: `Hey ${activePersona.shortName}! Burning the midnight oil? Ask me anything from C Programming or Data Structures. I answer strictly using Peer-Accepted and Teacher-Verified campus threads—and if a topic is uncharted, I can escalate it straight to Prof. Kulkarni and our top peer solvers.`,
     },
   ]);
 
@@ -100,7 +100,7 @@ export function AiFriendView({
       botMsg = {
         id: `bot-${Date.now() + 1}`,
         sender: 'assistant',
-        text: `I could not find any Teacher-Verified or Peer-Accepted campus solution for "${query}" yet. Rather than guessing, I recommend escalating this directly to our faculty and peer solver queue so you get an accurate answer.`,
+        text: `I couldn’t find a Teacher-Verified or Peer-Accepted campus solution for "${query}" yet. Rather than guessing, let’s route this directly to our faculty and peer solver queue so you get a rock-solid answer.`,
         needsEscalation: true,
         escalationQuery: query,
       };
@@ -138,21 +138,21 @@ export function AiFriendView({
               24×7 AI Study Friend
             </h1>
             <p className="text-xs sm:text-sm text-indigo-100">
-              24×7 AI Study Friend • Grounded strictly in verified &amp; peer-accepted campus solutions
+              Grounded exclusively in Peer-Accepted &amp; Teacher-Verified campus threads
             </p>
           </div>
         </div>
         <span className="px-3 py-1 rounded-full text-xs font-semibold bg-white/15 text-white whitespace-nowrap self-start sm:self-auto">
-          Zero-Hallucination Mode
+          Zero-Hallucination Grounding
         </span>
       </div>
 
       {/* Chat Container */}
-      <div className="bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm flex flex-col overflow-hidden">
         {/* Sample Prompt Chips */}
-        <div className="px-5 py-3.5 bg-slate-50 border-b border-slate-200 space-y-2">
-          <p className="text-xs font-semibold text-slate-500">
-            Try a grounded campus lookup or an unseen escalation prompt:
+        <div className="px-5 py-3.5 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 space-y-2">
+          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+            Try a verified campus lookup or test an uncharted escalation:
           </p>
           <div className="flex flex-wrap gap-2">
             {SAMPLE_CHIPS.map((chip) => (
@@ -160,7 +160,7 @@ export function AiFriendView({
                 key={chip}
                 type="button"
                 onClick={() => handleSendQuery(chip)}
-                className="px-3 py-1.5 rounded-full text-xs font-medium bg-white border border-slate-200 text-slate-700 hover:border-indigo-300 hover:text-indigo-700 hover:bg-indigo-50/50 transition-colors text-left"
+                className="px-3 py-1.5 rounded-full text-xs font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-indigo-300 dark:hover:border-indigo-700 hover:text-indigo-700 dark:hover:text-indigo-300 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/50 transition-colors text-left"
               >
                 {chip}
               </button>
@@ -179,42 +179,42 @@ export function AiFriendView({
               </div>
             ) : (
               <div key={msg.id} className="flex items-start gap-3">
-                <span className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-100 flex items-center justify-center shrink-0 mt-0.5">
+                <span className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/70 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/80 flex items-center justify-center shrink-0 mt-0.5">
                   <Bot className="w-4 h-4" />
                 </span>
 
-                <div className="max-w-2xl bg-slate-50 border border-slate-200 rounded-2xl rounded-tl-sm p-4 space-y-3">
+                <div className="max-w-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-2xl rounded-tl-sm p-4 space-y-3">
                   {/* Grounded Match Header */}
                   {msg.matchedDoubtTitle && (
-                    <div className="space-y-1.5 pb-2.5 border-b border-slate-200/80">
+                    <div className="space-y-1.5 pb-2.5 border-b border-slate-200/80 dark:border-slate-700">
                       <div className="flex flex-wrap items-center gap-1.5">
                         {(msg.trustLabel === 'Peer-Accepted' ||
                           msg.trustLabel === 'Both') && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/80">
                             <CheckCircle2 className="w-3 h-3" />
                             Peer-Accepted Source
                           </span>
                         )}
                         {(msg.trustLabel === 'Teacher-Verified' ||
                           msg.trustLabel === 'Both') && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-                            <ShieldCheck className="w-3 h-3 text-amber-500" />
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/80">
+                            <ShieldCheck className="w-3 h-3 text-amber-500 dark:text-amber-400" />
                             Teacher-Verified Source
                           </span>
                         )}
                       </div>
-                      <p className="text-xs font-bold text-slate-900">
+                      <p className="text-xs font-bold text-slate-900 dark:text-slate-100">
                         Matched Thread: {msg.matchedDoubtTitle}
                       </p>
                     </div>
                   )}
 
-                  <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">
+                  <p className="text-sm text-slate-700 dark:text-slate-200 leading-relaxed whitespace-pre-line">
                     {msg.text}
                   </p>
 
                   {msg.codeBlock && (
-                    <pre className="p-3.5 rounded-lg bg-slate-900 text-slate-100 text-xs font-mono overflow-x-auto leading-relaxed border border-slate-800">
+                    <pre className="p-3.5 rounded-lg bg-slate-900 dark:bg-slate-950 text-slate-100 text-xs font-mono overflow-x-auto leading-relaxed border border-slate-800">
                       <code>{msg.codeBlock}</code>
                     </pre>
                   )}
@@ -243,25 +243,25 @@ export function AiFriendView({
                         className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-amber-600 hover:bg-amber-700 text-white transition-colors shadow-xs"
                       >
                         <SendToBack className="w-3.5 h-3.5" />
-                        <span>Escalate to Teacher &amp; Peer Queue</span>
+                        <span>Escalate to Faculty &amp; Solver Queue</span>
                       </button>
-                      <span className="inline-flex items-center gap-1 text-xs text-slate-500">
-                        <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
-                        Posts directly to Unresolved Tracker
+                      <span className="inline-flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
+                        <AlertCircle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                        Routes straight to Unresolved Tracker
                       </span>
                     </div>
                   )}
 
                   {msg.escalatedDoubtId && (
-                    <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200 flex flex-wrap items-center justify-between gap-2">
-                      <span className="text-xs font-semibold text-emerald-800 flex items-center gap-1.5">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800/80 flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-xs font-semibold text-emerald-800 dark:text-emerald-200 flex items-center gap-1.5">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                         Escalated to Doubt Feed &amp; Unresolved Tracker!
                       </span>
                       <button
                         type="button"
                         onClick={() => onSelectDoubt(msg.escalatedDoubtId!)}
-                        className="text-xs font-semibold text-indigo-700 hover:underline"
+                        className="text-xs font-semibold text-indigo-700 dark:text-indigo-300 hover:underline"
                       >
                         View Escalated Doubt →
                       </button>
@@ -279,19 +279,19 @@ export function AiFriendView({
             e.preventDefault();
             handleSendQuery(input);
           }}
-          className="p-4 bg-white border-t border-slate-200 flex gap-2.5"
+          className="p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex gap-2.5"
         >
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask a late-night question (e.g., Why does scanf skip char input?)..."
-            className="flex-1 px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-indigo-500"
+            className="flex-1 px-4 py-2.5 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-500"
           />
           <button
             type="submit"
             disabled={!input.trim()}
-            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white transition-colors"
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 dark:disabled:bg-slate-700 disabled:text-slate-500 dark:disabled:text-slate-400 text-white transition-colors"
           >
             <Send className="w-4 h-4" />
             <span>Ask</span>

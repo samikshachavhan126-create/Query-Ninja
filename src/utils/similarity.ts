@@ -45,12 +45,15 @@ const STOP_WORDS = new Set([
 
 const SEMANTIC_SYNONYM_GROUPS: string[][] = [
   ['segfault', 'segmentation', 'fault', 'crash', 'crashing', 'core', 'dumped'],
-  ['memory', 'malloc', 'calloc', 'heap', 'allocate', 'allocation', 'garbage', 'zero', 'initialization'],
+  ['memory', 'malloc', 'calloc', 'heap', 'allocate', 'allocation', 'garbage', 'zero', 'initialization', 'dangling', 'stack'],
   ['character', 'char', 'scanf', 'buffer', 'stdin', 'newline', 'input', 'skip', 'skips'],
   ['sort', 'sorting', 'merge', 'mergesort', 'quick', 'quicksort', 'complexity'],
   ['list', 'lists', 'linked', 'singly', 'node', 'nodes', 'reverse', 'reversing'],
-  ['pointer', 'pointers', 'null', 'dereference', 'dereferencing', 'address'],
-  ['recursion', 'recursive', 'base'],
+  ['pointer', 'pointers', 'null', 'dereference', 'dereferencing', 'address', 'decay', 'sizeof', 'array', 'arrays'],
+  ['recursion', 'recursive', 'base', 'recurrence', 'master', 'theorem'],
+  ['bst', 'tree', 'trees', 'binary', 'delete', 'successor', 'subtree'],
+  ['knapsack', 'dp', 'dynamic', 'programming', 'memoization', 'memoized'],
+  ['eigenvalue', 'eigenvalues', 'matrix', 'diagonalizable', 'multiplicity'],
 ];
 
 const SYNONYM_LOOKUP = new Map<string, string[]>();

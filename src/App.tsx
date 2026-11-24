@@ -12,6 +12,7 @@ import {
   UserRole,
 } from './types';
 import { TopNav } from './components/TopNav';
+import { OpeningIntro } from './components/OpeningIntro';
 import { OnboardingView } from './components/OnboardingView';
 import { DoubtFeedView } from './components/DoubtFeedView';
 import { DoubtDetailView } from './components/DoubtDetailView';
@@ -29,19 +30,57 @@ function recomputeDoubtStatus(answers: Answer[]): DoubtStatus {
 }
 
 export default function App() {
+  const [showOpeningIntro, setShowOpeningIntro] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(true);
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return window.localStorage.getItem('qn-theme') === 'dark';
+  });
   const [doubts, setDoubts] = useState<Doubt[]>(INITIAL_DOUBTS);
   const [activeTab, setActiveTab] = useState<NavTab>('feed');
   const [selectedDoubtId, setSelectedDoubtId] = useState<string | null>(null);
   const [activeRole, setActiveRole] = useState<UserRole>('asker');
   const [searchQuery, setSearchQuery] = useState('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [askFocusTrigger, setAskFocusTrigger] = useState(0);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', isDarkMode);
+    try {
+      window.localStorage.setItem('qn-theme', isDarkMode ? 'dark' : 'light');
+    } catch {
+      // ignore storage errors in restricted iframes
+    }
+  }, [isDarkMode]);
+
+  const handleToggleTheme = () => setIsDarkMode((prev) => !prev);
 
   useEffect(() => {
     if (!toastMessage) return;
     const timer = window.setTimeout(() => setToastMessage(null), 5000);
     return () => window.clearTimeout(timer);
   }, [toastMessage]);
+
+  useEffect(() => {
+    const handleGlobalKeyDown = (event: KeyboardEvent) => {
+      if (
+        (event.metaKey || event.ctrlKey) &&
+        !event.altKey &&
+        !event.shiftKey &&
+        event.key.toLowerCase() === 'k'
+      ) {
+        event.preventDefault();
+        setShowOpeningIntro(false);
+        setShowOnboarding(false);
+        setSelectedDoubtId(null);
+        setActiveTab('ask');
+        setAskFocusTrigger((prev) => prev + 1);
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, []);
 
   const activePersona = useMemo(
     () => PERSONAS.find((p) => p.id === activeRole) ?? PERSONAS[0],
@@ -107,7 +146,7 @@ export default function App() {
     setDoubts((prev) => [newDoubt, ...prev]);
     setSelectedDoubtId(null);
     setActiveTab('feed');
-    setToastMessage('Doubt posted! Visible in Doubt Feed & Unresolved Tracker.');
+    setToastMessage('Doubt published! Now live in the Doubt Feed & Unresolved Tracker.');
   };
 
   const handleAddAnswer = (
@@ -283,7 +322,7 @@ export default function App() {
     const newDoubt: Doubt = {
       id: Date.now().toString(),
       title: questionText,
-      description: `Escalated from 24×7 AI Study Friend because no Teacher-Verified or Peer-Accepted campus solution existed yet.`,
+      description: `Escalated from 24×7 AI Study Friend — no Teacher-Verified or Peer-Accepted campus walkthrough existed yet.`,
       subject: 'C Programming',
       topic: 'General',
       authorName: authorNameByRole[activeRole],
@@ -294,7 +333,7 @@ export default function App() {
       answers: [],
     };
     setDoubts((prev) => [newDoubt, ...prev]);
-    setToastMessage('Escalated to Doubt Feed & Unresolved Tracker!');
+    setToastMessage('Escalated straight to the Doubt Feed & Unresolved Tracker!');
     return newDoubt;
   };
 
@@ -307,7 +346,12 @@ export default function App() {
   return (
     <MotionConfig reducedMotion="user">
       <AnimatePresence mode="wait">
-        {showOnboarding ? (
+        {showOpeningIntro ? (
+          <OpeningIntro
+            key="opening-intro"
+            onComplete={() => setShowOpeningIntro(false)}
+          />
+        ) : showOnboarding ? (
           <OnboardingView
             key="onboarding"
             personas={PERSONAS}
@@ -316,14 +360,16 @@ export default function App() {
             onGetStarted={handleCompleteOnboarding}
             totalDoubtsCount={doubts.length}
             unresolvedCount={unresolvedCount}
+            isDarkMode={isDarkMode}
+            onToggleTheme={handleToggleTheme}
           />
         ) : (
           <motion.div
             key="app-workspace"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-            className="min-h-screen bg-slate-50 text-slate-900 flex flex-col"
+            initial={{ opacity: 0, y: 12, filter: 'blur(6px)' }}
+            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+            className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col transition-colors"
           >
             <TopNav
               activeTab={activeTab}
@@ -335,13 +381,15 @@ export default function App() {
               personas={PERSONAS}
               activeRole={activeRole}
               onRoleChange={setActiveRole}
+              isDarkMode={isDarkMode}
+              onToggleTheme={handleToggleTheme}
             />
 
             {toastMessage && (
               <div
                 role="status"
                 aria-live="polite"
-                className="fixed bottom-5 right-5 z-50 max-w-md bg-slate-900 text-white px-4 py-3 rounded-xl shadow-lg border border-slate-700 flex items-center gap-3"
+                className="fixed bottom-5 right-5 z-50 max-w-md bg-slate-900 dark:bg-slate-800 text-white px-4 py-3 rounded-xl shadow-lg border border-slate-700 dark:border-slate-600 flex items-center gap-3"
               >
                 <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
                 <span className="text-sm font-medium">{toastMessage}</span>
@@ -383,6 +431,7 @@ export default function App() {
                 <AskDoubtView
                   doubts={doubts}
                   activePersona={activePersona}
+                  focusTitleTrigger={askFocusTrigger}
                   onCancel={() => handleSelectTab('feed')}
                   onSelectDoubt={handleSelectDoubt}
                   onCreateDoubt={handleCreateDoubt}
