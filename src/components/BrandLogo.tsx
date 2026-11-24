@@ -23,7 +23,7 @@ export function BrandLogo({ size = 'md' }: BrandLogoProps) {
         <ShieldCheck className="w-5 h-5 text-indigo-400" />
       ) : (
         <img
-          src="/assets/aistudio/IMG_9314_955fdc89.PNG"
+          src="/assets/query-ninja-logo.png"
           alt="Query Ninja logo"
           referrerPolicy="no-referrer"
           onError={() => setImgError(true)}
